@@ -1,3 +1,4 @@
+import java.io.IOException;
 import java.net.BindException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -9,27 +10,43 @@ import java.net.InetSocketAddress;
 
 
 public class Client {
+    private String hostname;
+    private int serverPort;
+    
+    public Client(String hostname, int serverPort) {
+        this.hostname = hostname;
+        this.serverPort = serverPort;
+    }
 
-    public Client (InetSocketAddress adress, String message){
-        try {
-            // 1 - Création du canal
-            DatagramSocket socketClient = new DatagramSocket();
-            InetAddress adresseClient = InetAddress.getByName("localhost");
-            byte[] envoyees; // tampon d'émission
-            byte[] recues = new byte[1024]; // tampon de réception
-            // 2 - Émettre 
-            envoyees = message.getBytes();
-            DatagramPacket messageEnvoye = new DatagramPacket(envoyees, envoyees.length, adresseClient, 6666);
+
+
+    public String sendAndReceive(String message) {
+        try (DatagramSocket socketClient = new DatagramSocket()) {
+
+            
+            // Préparation et envoi du message
+            InetAddress adresseClient = InetAddress.getByName(this.hostname);
+            byte[] envoyees = message.getBytes();
+            DatagramPacket messageEnvoye = new DatagramPacket(envoyees, envoyees.length, 
+                                                            adresseClient, this.serverPort);
             socketClient.send(messageEnvoye);
-            // 3 - Recevoir
+            
+            // Réception de la réponse
+            byte[] recues = new byte[1024];
             DatagramPacket paquetRecu = new DatagramPacket(recues, recues.length);
             socketClient.receive(paquetRecu);
+            
+            // Traitement de la réponse
             String reponse = new String(paquetRecu.getData(), 0, paquetRecu.getLength());
             System.out.println("Depuis le serveur: " + reponse);
-            // 4 - Libérer le canal
+
+            // libérer le canal
             socketClient.close();
-        } catch (Exception e) {
-            System.err.println(e);
+
+            return reponse;
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
         }
     }
 

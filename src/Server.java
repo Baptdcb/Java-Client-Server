@@ -1,33 +1,36 @@
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
+
 
 public class Server {
-    public Server(InetSocketAddress address, String message){ 
-    
-        try{
-            // 1 - Création du canal
-            DatagramSocket socketServeur = new DatagramSocket(null);
-            // 2 - Réservation du port
 
-            socketServeur.bind(address);
-            byte[] recues = new byte[1024]; // tampon d'émission
-            byte[] envoyees; // tampon de réception
-            // 3 - Recevoir
-            DatagramPacket paquetRecu = new DatagramPacket(recues, recues.length);
-            socketServeur.receive(paquetRecu);
-            System.out.println("Reçu: " + message);
-            // 4 - Émettre
-            InetAddress adrClient = paquetRecu.getAddress(); int prtClient = paquetRecu.getPort();
-            String reponse = "Accusé de réception"; envoyees = reponse.getBytes();
-            DatagramPacket paquetEnvoye = new DatagramPacket(envoyees, envoyees.length, adrClient, prtClient);
-            socketServeur.send(paquetEnvoye);
-            // 5 - Libérer le canal
-            socketServeur.close();
-        }catch(Exception e){
-            System.err.println(e);
-        }
-    
+    private DatagramSocket socket; 
+
+    public Server(String host, int port) throws Exception {
+
+        this.socket = new DatagramSocket(port);
+        System.out.println("Serveur démarré sur le port " + port);
     }
+
+    public String sendAndReceive() throws Exception {
+
+        
+        byte[] receiveData = new byte[1024];
+        DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
+        socket.receive(receivePacket);
+
+        String receivedMessage = new String(receivePacket.getData(), 0, receivePacket.getLength());
+        System.out.println("Message reçu : " + receivedMessage);
+        
+        String responseMessage =  "Accusé de réception";
+        byte[] sendData = responseMessage.getBytes();
+        DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, 
+                                                      receivePacket.getAddress(), 
+                                                      receivePacket.getPort());
+        socket.send(sendPacket);
+        
+        return receivedMessage;
+    }
+    
+
 }
