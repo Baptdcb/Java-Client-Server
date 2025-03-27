@@ -11,7 +11,7 @@ public class App {
                 Server server = new Server(hostname, port_serv);
                 while (true) {
                     String receptionMessage = server.sendAndReceive();
-                    System.out.println("Server reçoit: " + receptionMessage);
+                    System.out.println("Serveur reçoit: " + receptionMessage);
                 }
             } catch (Exception e) {
                 e.printStackTrace();
@@ -21,7 +21,7 @@ public class App {
         serverThread.start();
         
         // Attendre que le serveur démarre
-        System.out.println("Server starting...");
+        System.out.println("Serveur démarre...");
         Thread.sleep(1000);
         
         // Client envoie un message
