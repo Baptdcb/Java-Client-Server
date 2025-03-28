@@ -1,4 +1,3 @@
-import java.util.Map;
 
 public class App {
     public static void main(String[] args) throws Exception {
@@ -8,7 +7,7 @@ public class App {
         // Démarrer le serveur dans un thread séparé
         Thread serverThread = new Thread(() -> {
             try {
-                Server server = new Server(hostname, port_serv);
+                Server server = new Server( port_serv);
                 while (true) {
                     String receptionMessage = server.sendAndReceive();
                     System.out.println("Serveur reçoit: " + receptionMessage);
@@ -25,8 +24,14 @@ public class App {
         Thread.sleep(1000);
         
         // Client envoie un message
-        Client client = new Client(hostname, port_serv);
-        String message = client.sendAndReceive("Bonjour, serveur ! Je suis le client.");
+        Client client_1 = new Client(hostname, port_serv);
+        String message = client_1.sendAndReceive("Bonjour, serveur ! Je suis le client 1.");
+
         System.out.println("Client reçoit: " + message);
+
+        Client client_2 = new Client(hostname, port_serv);
+        String message2 = client_2.sendAndReceive("Bonjour, serveur ! Je suis le client 2.");
+
+        System.out.println("Client reçoit: " + message2);
     }
 }

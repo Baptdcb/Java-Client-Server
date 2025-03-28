@@ -6,7 +6,7 @@ public class Server {
 
     private DatagramSocket socket; 
 
-    public Server(String host, int port) throws Exception {
+    public Server( int port) throws Exception {
 
         this.socket = new DatagramSocket(port);
         System.out.println("Serveur démarré sur le port " + port);
@@ -20,7 +20,6 @@ public class Server {
         socket.receive(receivePacket);
 
         String receivedMessage = new String(receivePacket.getData(), 0, receivePacket.getLength());
-        System.out.println("Message reçu : " + receivedMessage);
         
         String responseMessage =  "Accusé de réception";
         byte[] sendData = responseMessage.getBytes();
