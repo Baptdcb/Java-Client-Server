@@ -8,10 +8,10 @@ public class Client {
             InetAddress serverAddress = InetAddress.getByName("10.42.189.223");
             int serverPort = 8080;
 
-            String message = "Bonjour, je suis le client";
+            String Empty_message = "";
             DatagramPacket packet = new DatagramPacket(
-                message.getBytes(),
-                message.length(),
+                Empty_message.getBytes(),
+                Empty_message.length(),
                 serverAddress,
                 serverPort
             );
