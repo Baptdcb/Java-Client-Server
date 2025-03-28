@@ -1,36 +1,29 @@
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 
-
 public class Server {
+    public static void main(String[] args){
+        try(DatagramSocket serverSocket = new DatagramSocket(8080)){
+            System.out.println("Serveur en attente...");
+            byte[] buffer = new byte[1024];
 
-    private DatagramSocket socket; 
+            while (true) {
+                DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
+                serverSocket.receive(packet);
+                String message = new String(packet.getData(), 0, packet.getLength());
+                System.out.println("Message reçu : " + message);
 
-    public Server(String host, int port) throws Exception {
-
-        this.socket = new DatagramSocket(port);
-        System.out.println("Serveur démarré sur le port " + port);
+                String response = "Message reçu : " + message;
+                DatagramPacket responsPacket = new DatagramPacket(
+                    response.getBytes(),
+                    response.length(),
+                    packet.getAddress(),
+                    packet.getPort()
+                );
+                serverSocket.send(responsPacket);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
-
-    public String sendAndReceive() throws Exception {
-
-        
-        byte[] receiveData = new byte[1024];
-        DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
-        socket.receive(receivePacket);
-
-        String receivedMessage = new String(receivePacket.getData(), 0, receivePacket.getLength());
-        System.out.println("Message reçu : " + receivedMessage);
-        
-        String responseMessage =  "Accusé de réception";
-        byte[] sendData = responseMessage.getBytes();
-        DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, 
-                                                      receivePacket.getAddress(), 
-                                                      receivePacket.getPort());
-        socket.send(sendPacket);
-        
-        return receivedMessage;
-    }
-    
-
 }
