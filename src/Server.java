@@ -11,12 +11,13 @@ public class Server {
                 DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
                 serverSocket.receive(packet);
                 String message = new String(packet.getData(), 0, packet.getLength());
-                System.out.println("Message reçu : " + message);
+                System.out.println("Message reçu : " + message + "IP :" + packet.getAddress());
 
                 String response = "Message reçu : " + message;
+                byte[] responseBytes = response.getBytes();
                 DatagramPacket responsPacket = new DatagramPacket(
-                    response.getBytes(),
-                    response.length(),
+                    responseBytes,
+                    responseBytes.length,
                     packet.getAddress(),
                     packet.getPort()
                 );
