@@ -24,16 +24,7 @@ public class Server {
             while (true) {
                 for (int i = 1; i <= joueurs.size(); i++) {
                     String message = "Fin du tour";
-                    byte[] messageBytes = message.getBytes();
-                    InetAddress address = InetAddress.getByName(joueurs.get(i).split(":")[0]);
-                    int port = Integer.parseInt(joueurs.get(i).split(":")[1]);
-                    
-                    DatagramPacket messagePacket = new DatagramPacket(
-                        messageBytes,
-                        messageBytes.length,
-                        address,
-                        port);
-                    serverSocket.send(messagePacket);
+                    envoyerMessageAuClient(serverSocket, joueurs.get(i), message);
                     System.out.println("Message envoyé au joueur n°" + i);
 
                     DatagramPacket responsePacket = new DatagramPacket(buffer, buffer.length);
@@ -44,9 +35,12 @@ public class Server {
                     String senderAddress = responsePacket.getAddress().toString().replace("/", "");
                     int senderPort = responsePacket.getPort();
                     String expectedAddressPort = joueurs.get(i);
-              
+                    
                     if (!expectedAddressPort.equals(senderAddress + ":" + senderPort)) {
                         System.out.println("Erreur : Message reçu d'un joueur inattendu !");
+                        String messageErreur = "Erreur : Ce n'est pas votre tour";
+                        envoyerMessageAuClient(serverSocket, senderAddress + ":" + senderPort, messageErreur);
+
                         i=i-1;
                         continue;
                     }
@@ -81,5 +75,20 @@ public class Server {
         serverSocket.send(responsePacket);
 
         return valuer_Ip_port;
+    }
+
+    private static void envoyerMessageAuClient(DatagramSocket serverSocket, String clientInfo, String message) throws Exception {
+        String[] clientParts = clientInfo.split(":");
+        InetAddress address = InetAddress.getByName(clientParts[0]);
+        int port = Integer.parseInt(clientParts[1]);
+
+        byte[] messageBytes = message.getBytes();
+        DatagramPacket messagePacket = new DatagramPacket(
+            messageBytes,
+            messageBytes.length,
+            address,
+            port
+        );
+        serverSocket.send(messagePacket);
     }
 }
