@@ -15,7 +15,7 @@ public class Server {
 
             while (joueurs.size() < 2) {
                 int identifiant = joueurs.size() + 1;
-                String valuer_Ip_port = recevoirClient(serverSocket, buffer, identifiant);
+                String valuer_Ip_port = connexionClient(serverSocket, buffer, identifiant);
                 joueurs.put(identifiant, valuer_Ip_port);
                 System.out.println(joueurs.size() + " joueur(s) connecté(s)");
             }
@@ -44,7 +44,7 @@ public class Server {
                     String senderAddress = responsePacket.getAddress().toString().replace("/", "");
                     int senderPort = responsePacket.getPort();
                     String expectedAddressPort = joueurs.get(i);
-              
+                    
                     if (!expectedAddressPort.equals(senderAddress + ":" + senderPort)) {
                         System.out.println("Erreur : Message reçu d'un joueur inattendu !");
                         i=i-1;
@@ -60,11 +60,11 @@ public class Server {
         }
     }
 
-    private static String recevoirClient(DatagramSocket serverSocket, byte[] buffer, int identifiant) throws Exception {
+    private static String connexionClient(DatagramSocket serverSocket, byte[] buffer, int identifiant) throws Exception {
         DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
         serverSocket.receive(packet);
 
-        String valuer_Ip_port = packet.getAddress().toString().replace("/", "") + ":" + packet.getPort();
+        String valuerIpPort = packet.getAddress().toString().replace("/", "") + ":" + packet.getPort();
         String ipAddress = packet.getAddress().toString();
 
         System.out.println("Serveur : IP Client:" + ipAddress + " Port Client:" + packet.getPort()
@@ -80,6 +80,6 @@ public class Server {
         );
         serverSocket.send(responsePacket);
 
-        return valuer_Ip_port;
+        return valuerIpPort;
     }
 }
