@@ -5,6 +5,20 @@ import java.util.HashMap;
 
 public class Server {   
     
+    private DatagramSocket serverSocket;
+    private HashMap<Integer, String> joueurs;
+    private HashMap<Integer, String> spectateurs;
+
+    public Server() throws Exception{
+        this.serverSocket = new DatagramSocket(8080);
+        this.joueurs = new HashMap<>();
+        this.spectateurs = new HashMap<>();
+    }
+
+    public void start(){
+
+    }
+
     public static void main(String[] args){
         try(DatagramSocket serverSocket = new DatagramSocket(8080)){
             
@@ -12,11 +26,12 @@ public class Server {
             byte[] buffer = new byte[1024];
             
             HashMap<Integer, String> joueurs = new HashMap<>();
+            HashMap<Integer, String> spectateurs = new HashMap<>();
 
             while (joueurs.size() < 2) {
                 int identifiant = joueurs.size() + 1;
-                String valuer_Ip_port = connexionClient(serverSocket, buffer, identifiant);
-                joueurs.put(identifiant, valuer_Ip_port);
+                String valuerIpPort = connexionClient(serverSocket, buffer, identifiant);
+                joueurs.put(identifiant, valuerIpPort);
                 System.out.println(joueurs.size() + " joueur(s) connecté(s)");
             }
             System.out.println("Debut du jeu");
@@ -54,7 +69,7 @@ public class Server {
         }
     }
 
-    private static String connexionClient(DatagramSocket serverSocket, byte[] buffer, int identifiant) throws Exception {
+    private String connexionClient(DatagramSocket serverSocket, byte[] buffer, int identifiant) throws Exception {
         DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
         serverSocket.receive(packet);
 
@@ -77,7 +92,7 @@ public class Server {
         return valuerIpPort;
     }
 
-    private static void envoyerMessageAuClient(DatagramSocket serverSocket, String clientInfo, String message) throws Exception {
+    private void envoyerMessageAuClient(DatagramSocket serverSocket, String clientInfo, String message) throws Exception {
         String[] clientParts = clientInfo.split(":");
         InetAddress address = InetAddress.getByName(clientParts[0]);
         int port = Integer.parseInt(clientParts[1]);
@@ -90,5 +105,9 @@ public class Server {
             port
         );
         serverSocket.send(messagePacket);
+    }
+
+    private void envoyerMessageBroadcast(){
+
     }
 }
