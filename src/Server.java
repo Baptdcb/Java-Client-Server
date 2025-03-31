@@ -28,9 +28,10 @@ public class Server {
 
             while (true) {
                 for (int i = 1; i <= joueurs.size(); i++) {
-                    String message = "Fin du tour";
+                    String message = "C'est votre tour";
                     envoyerMessageAuClient(serverSocket, joueurs.get(i), message);
-                    System.out.println("Message envoyé au joueur n°" + i);
+                    System.out.println("Message envoyé au joueur n°" + i+ " : " + message);
+
 
                     DatagramPacket responsePacket = new DatagramPacket(buffer, buffer.length);
                     serverSocket.receive(responsePacket);
@@ -49,7 +50,6 @@ public class Server {
                         i=i-1;
                         continue;
                     }
-
                     System.out.println("Joueur n°" + i + " a joué : " + coupJoue);
                 }
             }
