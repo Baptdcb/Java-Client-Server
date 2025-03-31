@@ -1,37 +1,78 @@
 import java.net.DatagramSocket;
-import java.net.InetAddress;
+import java.util.Scanner;
 
-public class Joueur extends Client{
+public class Joueur extends Client {
 
-    
+    private DatagramSocket clientSocket;
+
+    public Joueur() throws Exception {
+        this.clientSocket = new DatagramSocket();
+    }
+
+    public void start() {
+        Scanner scanner = new Scanner(System.in);
+
+        try {
+            connexionServeur("joueur", clientSocket);
+            String responseConnection = recevoirMessage(clientSocket);
+            System.out.println("Serveur : " + responseConnection);
+
+            Thread receptionThread = new Thread(() -> {
+                while (true) {
+                    try {
+                        String message = recevoirMessage(clientSocket);
+                        System.out.println(message);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            });
+            receptionThread.start();
+
+            System.out.println("Commandes disponibles :");
+            System.out.println("- Pour jouer : /jouer ligne,colonne (ex: /jouer 0,1)");
+            System.out.println("- Pour envoyer un message : tapez simplement votre message");
+
+            while (true) {
+
+                String input = scanner.nextLine();
+
+                if (input.startsWith("/jouer")) {
+                    String coup = input.substring(7);
+                    envoyerCoup(clientSocket, coup);
+                } else {
+                    envoyerChat(clientSocket, input);
+                }
+
+                // if (response.equals(" Vous êtes le joueur n°1")) {
+                // sonTour = true;
+                // }
+                // System.out.println(sonTour);
+                // System.out.println("le joueur numéro 1 commence");
+                // String inputMessage = "";
+            }
+
+            // while (!inputMessage.equals("exit")) {
+
+            // }
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            scanner.close();
+        }
+    }
+
+    public void envoyerCoup(DatagramSocket socket, String coup) {
+        envoyerMessage(socket, "COUP:" + coup);
+    }
+
     public static void main(String[] args) {
-        try (DatagramSocket clientSocket = new DatagramSocket()) {
+        try {
             Joueur joueur = new Joueur();
-
-            InetAddress serverAddress = InetAddress.getByName("10.42.189.223");
-            int serverPort = 8080;
-            Boolean sonTour = false;
-            // Envoyer un message vide au serveur
-            String joueurMessage = "joueur";
-            String response = joueur.envoyerMessage(clientSocket, serverAddress, serverPort, joueurMessage);
-            System.out.println("Réponse du serveur : " + response);
-            if(response.equals(" Vous êtes le joueur n°1")){
-                sonTour = true;
-            }
-            System.out.println(sonTour);
-
-            System.out.println("le joueur numéro 1 commence");
-
-            String inputMessage = "";
-            while (!inputMessage.equals("exit")) {
-
-                
-                
-            }
+            joueur.start();
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    
 }

@@ -3,28 +3,25 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 
 public class Client {
-    
-    public String envoyerMessage(DatagramSocket socket, InetAddress serverAddress, int serverPort, String message) {
+
+    protected String SERVER_ADDRESS = "10.138.122.54";
+    protected int SERVER_PORT = 8080;
+
+    public Client() {
+    }
+
+    public boolean envoyerMessage(DatagramSocket socket, String message) {
         try {
-            // Configurer et envoyer le paquet
             DatagramPacket packet = new DatagramPacket(
-                message.getBytes(),
-                message.getBytes().length,
-                serverAddress,
-                serverPort
-            );
+                    message.getBytes(),
+                    message.getBytes().length,
+                    InetAddress.getByName(SERVER_ADDRESS),
+                    SERVER_PORT);
             socket.send(packet);
-
-            // Recevoir la réponse
-            byte[] buffer = new byte[1024];
-            DatagramPacket responsePacket = new DatagramPacket(buffer, buffer.length);
-            socket.receive(responsePacket);
-
-            // Retourner la réponse du serveur
-            return new String(responsePacket.getData(), 0, responsePacket.getLength());
+            return true;
         } catch (Exception e) {
             e.printStackTrace();
-            return null;
+            return false;
         }
     }
 
@@ -32,15 +29,30 @@ public class Client {
         try {
             byte[] receiveData = new byte[1024];
             DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
-            
+
             // Cette méthode est bloquante - elle attend jusqu'à ce qu'un paquet soit reçu
             socket.receive(receivePacket);
-            
+
             // Convertir les données reçues en chaîne de caractères
             return new String(receivePacket.getData(), 0, receivePacket.getLength());
         } catch (Exception e) {
             e.printStackTrace();
             return null;
         }
+    }
+
+    public boolean connexionServeur(String type, DatagramSocket socket) {
+        try {
+            String joueurMessage = type;
+            envoyerMessage(socket, joueurMessage);
+            return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public void envoyerChat(DatagramSocket socket, String message) {
+        envoyerMessage(socket, "CHAT:" + message);
     }
 }

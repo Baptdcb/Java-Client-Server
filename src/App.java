@@ -1,6 +1,6 @@
 public class App {
-    
-    public static void main(String[] args){
+
+    public static void main(String[] args) {
         // Grille g = new Grille();
         // g.afficherGrille();
         // g.jouer(1, 2,2);

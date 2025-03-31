@@ -1,5 +1,5 @@
 public class Grille {
-    
+
     public char[][] grille;
     public int tourJoueur = 1;
 
@@ -13,8 +13,8 @@ public class Grille {
         }
     }
 
-    public void jouer(int numJoueur, int ligne, int colonne){
-        if(numJoueur != tourJoueur) {
+    public void jouer(int numJoueur, int ligne, int colonne) {
+        if (numJoueur != tourJoueur) {
             System.out.println("Ce n'est pas le tour du joueur " + numJoueur);
             return;
         }
@@ -27,7 +27,7 @@ public class Grille {
         joueurSuivant();
     }
 
-    public void afficherGrille(){
+    public void afficherGrille() {
         String returnString = "";
         for (char[] ligne : grille) {
             returnString += "-------------\n";
@@ -41,33 +41,47 @@ public class Grille {
         System.out.println(returnString);
     }
 
-    public boolean verifierGagnant(char symbole){
+    public String toString() {
+        String returnString = "";
+        for (char[] ligne : grille) {
+            returnString += "-------------\n";
+            returnString += "| ";
+            for (char valeur : ligne) {
+                returnString += valeur + " | ";
+            }
+            returnString += "\n";
+        }
+        returnString += "-------------";
+        return returnString;
+    }
 
-        for(int i = 0; i < 3; i++){
-            if(grille[i][0] == symbole && grille[i][1] == symbole && grille[i][2] == symbole){
+    public boolean verifierGagnant(char symbole) {
+
+        for (int i = 0; i < 3; i++) {
+            if (grille[i][0] == symbole && grille[i][1] == symbole && grille[i][2] == symbole) {
                 return true;
             }
         }
 
-        for (int i = 0; i < 3; i++){
-            if(grille[0][i] == symbole && grille[1][i] == symbole && grille[2][i] == symbole){
+        for (int i = 0; i < 3; i++) {
+            if (grille[0][i] == symbole && grille[1][i] == symbole && grille[2][i] == symbole) {
                 return true;
-            } 
+            }
         }
 
-        if(grille[0][0] == symbole && grille[1][1] == symbole && grille[2][2] == symbole ){
+        if (grille[0][0] == symbole && grille[1][1] == symbole && grille[2][2] == symbole) {
             return true;
         }
 
-        if(grille[0][2] == symbole && grille[1][1] == symbole && grille[2][0] == symbole ){
+        if (grille[0][2] == symbole && grille[1][1] == symbole && grille[2][0] == symbole) {
             return true;
         }
 
         return false;
     }
 
-    public void joueurSuivant(){
-        if(tourJoueur == 1){
+    public void joueurSuivant() {
+        if (tourJoueur == 1) {
             tourJoueur = 2;
         } else {
             tourJoueur = 1;
