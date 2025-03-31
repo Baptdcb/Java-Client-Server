@@ -15,16 +15,18 @@ public class Joueur extends Client{
             String emptyMessage = "";
             String response = joueur.envoyerMessage(clientSocket, serverAddress, serverPort, emptyMessage);
             System.out.println("Réponse du serveur : " + response);
+            if(response.equals(" Vous êtes le joueur n°1")){
+                sonTour = true;
+            }
+            System.out.println(sonTour);
+
             System.out.println("le joueur numéro 1 commence");
 
             String inputMessage = "";
             while (!inputMessage.equals("exit")) {
-                // Demander un message dans la console
-                System.out.println("Entrez un message :");
-                inputMessage = System.console().readLine();
-                // Envoyer le message au serveur et afficher la réponse
-                response = joueur.envoyerMessage(clientSocket, serverAddress, serverPort, inputMessage);
-                System.out.println("Réponse du serveur : " + response);
+
+                
+                
             }
         } catch (Exception e) {
             e.printStackTrace();
