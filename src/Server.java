@@ -13,28 +13,18 @@ public class Server {
         this.serverSocket = new DatagramSocket(8080);
         this.joueurs = new HashMap<>();
         this.spectateurs = new HashMap<>();
+        System.out.println("Serveur en attente...");
     }
 
     public void start(){
 
-    }
+        byte[] buffer = new byte[1024];
 
-    public static void main(String[] args){
-        try(DatagramSocket serverSocket = new DatagramSocket(8080)){
-            
-            System.out.println("Serveur en attente...");
-            byte[] buffer = new byte[1024];
-            
-            HashMap<Integer, String> joueurs = new HashMap<>();
-            HashMap<Integer, String> spectateurs = new HashMap<>();
-
-            while (joueurs.size() < 2) {
-                int identifiant = joueurs.size() + 1;
-                String valuerIpPort = connexionClient(serverSocket, buffer, identifiant);
-                joueurs.put(identifiant, valuerIpPort);
-                System.out.println(joueurs.size() + " joueur(s) connecté(s)");
+        try{
+            while(joueurs.size() < 2){
+                connexionClient(serverSocket, buffer);
             }
-            System.out.println("Debut du jeu");
+            System.out.println("Debut du jeu\n");
 
             while (true) {
                 for (int i = 1; i <= joueurs.size(); i++) {
@@ -63,33 +53,53 @@ public class Server {
                     System.out.println("Joueur n°" + i + " a joué : " + coupJoue);
                 }
             }
-            
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    private String connexionClient(DatagramSocket serverSocket, byte[] buffer, int identifiant) throws Exception {
+    private void connexionClient(DatagramSocket serverSocket, byte[] buffer) throws Exception {
         DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
         serverSocket.receive(packet);
 
         String valuerIpPort = packet.getAddress().toString().replace("/", "") + ":" + packet.getPort();
         String ipAddress = packet.getAddress().toString();
 
-        System.out.println("Serveur : IP Client:" + ipAddress + " Port Client:" + packet.getPort()
-                + " Joueur n°" + identifiant);
+        String message = new String(packet.getData(), 0, packet.getLength());
 
-        String response = " Vous êtes le joueur n°" + identifiant;  
-        byte[] responseBytes = response.getBytes();
-        DatagramPacket responsePacket = new DatagramPacket(
-            responseBytes,
-            responseBytes.length,
-            packet.getAddress(),
-            packet.getPort()
-        );
-        serverSocket.send(responsePacket);
+        if(message.equals("joueur")){
+            int id = joueurs.size() + 1;
+            System.out.println("Joueur " + id + " connecté (IP : " + ipAddress + ", Port : " + packet.getPort());
+            String response = "Vous êtes le joueur n°" + id + "/2";  
+            byte[] responseBytes = response.getBytes();
+            DatagramPacket responsePacket = new DatagramPacket(
+                responseBytes,
+                responseBytes.length,
+                packet.getAddress(),
+                packet.getPort()
+                );
+            serverSocket.send(responsePacket);
+            joueurs.put(id, valuerIpPort);  
+            System.out.println(joueurs.size() + " joueur(s) connecté(s)\n");
+        } else if (message.equals("spectateur")){
+            int id = spectateurs.size() + 1;
+            System.out.println("SPectateur " + id + " connecté (IP : " + ipAddress + ", Port : " + packet.getPort());
+            String response = "Vous êtes le spectateur n°" + id;  
+            byte[] responseBytes = response.getBytes();
+            DatagramPacket responsePacket = new DatagramPacket(
+                responseBytes,
+                responseBytes.length,
+                packet.getAddress(),
+                packet.getPort()
+                );
+            serverSocket.send(responsePacket);
+            spectateurs.put(id, valuerIpPort);
+            System.out.println(joueurs.size() + " spectateur(s) connecté(s)\n");
+        }
+    }
 
-        return valuerIpPort;
+    public void envoyerMessage () {
+        
     }
 
     private void envoyerMessageAuClient(DatagramSocket serverSocket, String clientInfo, String message) throws Exception {
@@ -109,5 +119,14 @@ public class Server {
 
     private void envoyerMessageBroadcast(){
 
+    }
+
+    public static void main(String[] args){
+        try {
+            Server server = new Server();
+            server.start();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }

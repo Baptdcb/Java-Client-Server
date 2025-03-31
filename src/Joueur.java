@@ -8,12 +8,12 @@ public class Joueur extends Client{
         try (DatagramSocket clientSocket = new DatagramSocket()) {
             Joueur joueur = new Joueur();
 
-            InetAddress serverAddress = InetAddress.getByName("10.42.167.154");
+            InetAddress serverAddress = InetAddress.getByName("10.42.189.223");
             int serverPort = 8080;
             Boolean sonTour = false;
             // Envoyer un message vide au serveur
-            String emptyMessage = "";
-            String response = joueur.envoyerMessage(clientSocket, serverAddress, serverPort, emptyMessage);
+            String joueurMessage = "joueur";
+            String response = joueur.envoyerMessage(clientSocket, serverAddress, serverPort, joueurMessage);
             System.out.println("Réponse du serveur : " + response);
             System.out.println("le joueur numéro 1 commence");
 

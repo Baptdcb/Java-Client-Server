@@ -3,15 +3,27 @@ import java.net.InetAddress;
 
 public class Spectateur extends Client{
     
-    public static void main(String[] args){
-        try (DatagramSocket clientSocket = new DatagramSocket()) {
-            Spectateur spectateur = new Spectateur();
+    private DatagramSocket spectateurSocket;
 
-            InetAddress serverAddress = InetAddress.getByName("10.42.167.154");
+    public Spectateur() throws Exception{
+        this.spectateurSocket = new DatagramSocket();
+    }
+
+    public void start(){
+        try {
+            InetAddress serverAddress = InetAddress.getByName("10.42.189.223");
             int serverPort = 8080;
+            String spectateurMessage = "spectateur";
+            envoyerMessage(spectateurSocket, serverAddress, serverPort, spectateurMessage);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
-            String emptyMessage = "";
-            spectateur.envoyerMessage(clientSocket, serverAddress, serverPort, emptyMessage);
+    public static void main(String[] args){
+        try {
+            Spectateur spec = new Spectateur();
+            spec.start();
         } catch (Exception e) {
             e.printStackTrace();
         }
