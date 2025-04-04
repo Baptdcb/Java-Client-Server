@@ -91,4 +91,8 @@ public class Client {
     public void demanderPersonnes(DatagramSocket socket) {
         envoyerMessage(socket, "PERSONNES");
     }
+
+    public void envoyerMessagePrive(DatagramSocket socket, String message) {
+        envoyerMessage(socket, "MP:" + message);
+    }
 }

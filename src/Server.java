@@ -66,39 +66,32 @@ public class Server {
                         envoyerReponse("Serveur : Ce n'est pas ton tour", packet);
                     }
                 } else if (message.startsWith("CHAT:")) {
-                    envoyerReponse("Serveur : Chat reçu", packet);
-                    System.out.println("Message reçu : " + message);
+                    String expediteur = trouverExpediteur(infosEnvoyeur);
+                    diffuserMessage("Message de " + expediteur + " : " + message.substring(5), expediteur);
+                } else if (message.startsWith("MP:")) {
+                    String contenu = message.substring(3).trim();
+                    String[] parties = contenu.split(" ", 2);
+
+                    if (parties.length < 2) {
+                        envoyerReponse("Format invalide, utilisez la forme /destinataire message", packet);
+                    } else {
+                        String destinataire = parties[0].substring(1);
+                        String contenuMessage = parties[1];
+                        String adresse = trouverPersonne(destinataire);
+
+                        if (adresse.isEmpty()) {
+                            envoyerReponse("Destinataire introuvable", packet);
+                        } else {
+                            String expediteur = trouverExpediteur(infosEnvoyeur);
+                            envoyerReponse("Serveur : Message envoyé", packet);
+                            envoyerMessageAuClient(serverSocket, adresse,
+                                    "Message de " + expediteur + " : " + contenuMessage);
+                        }
+                    }
+
                 } else if (message.startsWith("PERSONNES")) {
                     envoyerReponse(listePersonnes(), packet);
                 }
-
-                // for (int i = 1; i <= joueurs.size(); i++) {
-                // String message = "C'est votre tour";
-                // envoyerMessageAuClient(serverSocket, joueurs.get(i), message);
-                // System.out.println("Message envoyé au joueur n°" + i + " : " + message);
-
-                // DatagramPacket responsePacket = new DatagramPacket(buffer, buffer.length);
-                // serverSocket.receive(responsePacket);
-                // String coupJoue = new String(responsePacket.getData(), 0,
-                // responsePacket.getLength());
-
-                // // Vérification du numéro du joueur
-                // String senderAddress = responsePacket.getAddress().toString().replace("/",
-                // "");
-                // int senderPort = responsePacket.getPort();
-                // String expectedAddressPort = joueurs.get(i);
-
-                // if (!expectedAddressPort.equals(senderAddress + ":" + senderPort)) {
-                // System.out.println("Erreur : Message reçu d'un joueur inattendu !");
-                // String messageErreur = "Erreur : Ce n'est pas votre tour";
-                // envoyerMessageAuClient(serverSocket, senderAddress + ":" + senderPort,
-                // messageErreur);
-
-                // i = i - 1;
-                // continue;
-                // }
-                // System.out.println("Joueur n°" + i + " a joué : " + coupJoue);
-                // }
             }
         } catch (
 
@@ -188,12 +181,28 @@ public class Server {
     }
 
     private void diffuserMessage(String message) throws Exception {
+
         for (Map.Entry<String, String> entry : joueurs.entrySet()) {
             envoyerMessageAuClient(serverSocket, entry.getValue(), message);
         }
 
         for (Map.Entry<String, String> entry : spectateurs.entrySet()) {
             envoyerMessageAuClient(serverSocket, entry.getValue(), message);
+        }
+    }
+
+    private void diffuserMessage(String message, String expediteur) throws Exception {
+
+        for (Map.Entry<String, String> entry : joueurs.entrySet()) {
+            if (entry.getKey() != expediteur) {
+                envoyerMessageAuClient(serverSocket, entry.getValue(), message);
+            }
+        }
+
+        for (Map.Entry<String, String> entry : spectateurs.entrySet()) {
+            if (entry.getKey() != expediteur) {
+                envoyerMessageAuClient(serverSocket, entry.getValue(), message);
+            }
         }
     }
 
@@ -227,6 +236,38 @@ public class Server {
             value += entry.getKey() + ", ";
         }
         return value.substring(0, value.length() - 2);
+    }
+
+    private String trouverPersonne(String pseudo) {
+        for (Map.Entry<String, String> entry : joueurs.entrySet()) {
+            if (entry.getKey().toLowerCase().equals(pseudo.toLowerCase())) {
+                return entry.getValue();
+            }
+        }
+
+        for (Map.Entry<String, String> entry : spectateurs.entrySet()) {
+            if (entry.getKey().toLowerCase().equals(pseudo.toLowerCase())) {
+                return entry.getValue();
+            }
+        }
+        return "";
+    }
+
+    private String trouverExpediteur(String infosEnvoyeur) {
+        String expediteur = "Inconnu";
+        for (Map.Entry<String, String> entry : joueurs.entrySet()) {
+            if (entry.getValue().equals(infosEnvoyeur)) {
+                expediteur = entry.getKey();
+                break;
+            }
+        }
+        for (Map.Entry<String, String> entry : spectateurs.entrySet()) {
+            if (entry.getValue().equals(infosEnvoyeur)) {
+                expediteur = entry.getKey();
+                break;
+            }
+        }
+        return expediteur;
     }
 
     public static void main(String[] args) {

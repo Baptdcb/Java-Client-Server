@@ -42,11 +42,24 @@ public class Joueur extends Client {
                 String input = scanner.nextLine();
 
                 if (input.startsWith("/jouer")) {
-                    String coup = input.substring(7);
-                    envoyerCoup(clientSocket, coup);
+                    if (input.length() >= 8) {
+                        String coup = input.substring(7);
+                        envoyerCoup(clientSocket, coup);
+                    } else {
+                        System.out.println("Veuillez utiliser le bon format pour jouer");
+                    }
                 } else if (input.trim().equals("/personnes")) {
                     demanderPersonnes(clientSocket);
-                } else {
+                } else if (input.startsWith("/mp")) {
+                    if (input.length() >= 4) {
+                        String message = input.substring(4);
+                        envoyerMessagePrive(clientSocket, message);
+                    } else {
+                        System.out.println("Veuillez utiliser le bon format pour envoyer des messages");
+                    }
+                }
+
+                else {
                     envoyerChat(clientSocket, input);
                 }
 
