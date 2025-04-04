@@ -5,7 +5,7 @@ import java.util.Scanner;
 
 public class Client {
 
-    protected String SERVER_ADDRESS = "10.138.122.109";
+    protected String SERVER_ADDRESS = "10.138.122.105";
     protected int SERVER_PORT = 8080;
 
     public Client() {
@@ -86,5 +86,9 @@ public class Client {
 
     public void envoyerChat(DatagramSocket socket, String message) {
         envoyerMessage(socket, "CHAT:" + message);
+    }
+
+    public void demanderPersonnes(DatagramSocket socket) {
+        envoyerMessage(socket, "PERSONNES");
     }
 }

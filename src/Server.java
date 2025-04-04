@@ -35,10 +35,18 @@ public class Server {
             diffuserMessage("Debut du jeu, grille initiale :\n");
             diffuserGrille();
 
+            diffuserMessage("\nC'est au tour du joueur " + listeJoueurs[joueurActuel]);
+            envoyerMessageAuClient(serverSocket, joueurs.get(listeJoueurs[joueurActuel]), "C'est votre tour");
+
+            boolean annoncerTour = false;
+
             while (true) {
 
-                diffuserMessage("\nC'est au tour du joueur " + listeJoueurs[joueurActuel]);
-                envoyerMessageAuClient(serverSocket, joueurs.get(listeJoueurs[joueurActuel]), "C'est votre tour");
+                if (annoncerTour) {
+                    diffuserMessage("\nC'est au tour du joueur " + listeJoueurs[joueurActuel]);
+                    envoyerMessageAuClient(serverSocket, joueurs.get(listeJoueurs[joueurActuel]), "C'est votre tour");
+                    annoncerTour = false;
+                }
 
                 DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
                 serverSocket.receive(packet);
@@ -52,13 +60,16 @@ public class Server {
                     if (joueurs.get(listeJoueurs[joueurActuel]).equals(infosEnvoyeur)) {
                         envoyerReponse("Serveur : Coup joué", packet);
                         System.out.println("Coup joué : " + message);
-                        joueurActuel = (joueurActuel == 1) ? 2 : 1;
+                        joueurActuel = (joueurActuel == 0) ? 1 : 0;
+                        annoncerTour = true;
                     } else {
                         envoyerReponse("Serveur : Ce n'est pas ton tour", packet);
                     }
-                } else {
+                } else if (message.startsWith("CHAT:")) {
                     envoyerReponse("Serveur : Chat reçu", packet);
                     System.out.println("Message reçu : " + message);
+                } else if (message.startsWith("PERSONNES")) {
+                    envoyerReponse(listePersonnes(), packet);
                 }
 
                 // for (int i = 1; i <= joueurs.size(); i++) {
@@ -105,39 +116,43 @@ public class Server {
 
         String message = new String(packet.getData(), 0, packet.getLength());
 
-        String[] infosClient = message.split(" ");
+        if (message.startsWith("joueur") || message.startsWith("spectateur")) {
+            String[] infosClient = message.split(" ");
 
-        if (verifierPseudo(infosClient[1])) {
-            if (infosClient[0].equals("joueur")) {
-                if (joueurs.size() < 2) {
-                    System.out.println(
-                            "Joueur " + infosClient[1] + " connecté (IP : " + ipAddress + ", Port : "
-                                    + packet.getPort());
-                    String response = "\nVous êtes le joueur " + infosClient[1] + "\n";
-                    envoyerReponse(response, packet);
-                    joueurs.put(infosClient[1], valuerIpPort);
-                    if (joueurs.size() == 1) {
-                        listeJoueurs[0] = infosClient[1];
-                    } else if (joueurs.size() == 2) {
-                        listeJoueurs[1] = infosClient[1];
+            if (verifierPseudo(infosClient[1])) {
+                if (infosClient[0].equals("joueur")) {
+                    if (joueurs.size() < 2) {
+                        System.out.println(
+                                "Joueur " + infosClient[1] + " connecté (IP : " + ipAddress + ", Port : "
+                                        + packet.getPort());
+                        String response = "\nVous êtes le joueur " + infosClient[1] + "\n";
+                        envoyerReponse(response, packet);
+                        joueurs.put(infosClient[1], valuerIpPort);
+                        if (joueurs.size() == 1) {
+                            listeJoueurs[0] = infosClient[1];
+                        } else if (joueurs.size() == 2) {
+                            listeJoueurs[1] = infosClient[1];
+                        }
+                        System.out.println(joueurs.size() + " joueur(s) connecté(s)\n");
+                    } else {
+                        System.out.println("Tentative de connxion en tant que Joueur refusée - maximun atteint");
+                        String response = "Nombre maximum de Joueurs atteint, connectez vous en tant que Spectateur";
+                        envoyerReponse(response, packet);
                     }
-                    System.out.println(joueurs.size() + " joueur(s) connecté(s)\n");
-                } else {
-                    System.out.println("Tentative de connxion en tant que Joueur refusée - maximun atteint");
-                    String response = "Nombre maximum de Joueurs atteint, connectez vous en tant que Spectateur";
+                } else if (infosClient[0].equals("spectateur")) {
+                    System.out.println(
+                            "Spectateur " + infosClient[1] + " connecté (IP : " + ipAddress + ", Port : "
+                                    + packet.getPort());
+                    String response = "Vous êtes le spectateur " + infosClient[1];
                     envoyerReponse(response, packet);
+                    spectateurs.put(infosClient[1], valuerIpPort);
+                    System.out.println(spectateurs.size() + " spectateur(s) connecté(s)\n");
                 }
-            } else if (infosClient[0].equals("spectateur")) {
-                System.out.println(
-                        "Spectateur " + infosClient[1] + " connecté (IP : " + ipAddress + ", Port : "
-                                + packet.getPort());
-                String response = "Vous êtes le spectateur " + infosClient[1];
-                envoyerReponse(response, packet);
-                spectateurs.put(infosClient[1], valuerIpPort);
-                System.out.println(joueurs.size() + " spectateur(s) connecté(s)\n");
+            } else {
+                envoyerReponse("Une personne existe déjà sous ce pseudo", packet);
             }
         } else {
-            envoyerReponse("Une personne existe déjà sous ce pseudo", packet);
+            envoyerReponse("Veuillez attendre le début de la partie pour envoyer un message", packet);
         }
 
     }
@@ -203,6 +218,15 @@ public class Server {
             }
         }
         return true;
+    }
+
+    private String listePersonnes() {
+        String value = "Joueurs : " + listeJoueurs[0] + ", " + listeJoueurs[1] + "\n";
+        value += "Spectateurs : ";
+        for (Map.Entry<String, String> entry : spectateurs.entrySet()) {
+            value += entry.getKey() + ", ";
+        }
+        return value.substring(0, value.length() - 2);
     }
 
     public static void main(String[] args) {

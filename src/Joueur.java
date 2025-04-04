@@ -44,6 +44,8 @@ public class Joueur extends Client {
                 if (input.startsWith("/jouer")) {
                     String coup = input.substring(7);
                     envoyerCoup(clientSocket, coup);
+                } else if (input.trim().equals("/personnes")) {
+                    demanderPersonnes(clientSocket);
                 } else {
                     envoyerChat(clientSocket, input);
                 }

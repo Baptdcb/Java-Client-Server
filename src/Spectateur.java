@@ -38,7 +38,13 @@ public class Spectateur extends Client {
 
             while (true) {
                 String input = scanner.nextLine();
-                envoyerChat(spectateurSocket, input);
+
+                if (input.trim().equals("/personnes")) {
+
+                    demanderPersonnes(spectateurSocket);
+                } else {
+                    envoyerChat(spectateurSocket, input);
+                }
             }
 
         } catch (Exception e) {
