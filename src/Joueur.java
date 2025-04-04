@@ -62,18 +62,8 @@ public class Joueur extends Client {
                 else {
                     envoyerChat(clientSocket, input);
                 }
-
-                // if (response.equals(" Vous êtes le joueur n°1")) {
-                // sonTour = true;
-                // }
-                // System.out.println(sonTour);
-                // System.out.println("le joueur numéro 1 commence");
-                // String inputMessage = "";
             }
 
-            // while (!inputMessage.equals("exit")) {
-
-            // }
         } catch (Exception e) {
             e.printStackTrace();
         } finally {

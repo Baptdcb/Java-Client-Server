@@ -56,16 +56,13 @@ public class Client {
                 boolean messageEnvoye = envoyerMessage(socket, message);
 
                 if (messageEnvoye) {
-                    // Attendre la réponse du serveur
                     String reponse = recevoirMessage(socket);
 
                     if (reponse != null) {
                         if (reponse.contains("Une personne existe déjà sous ce pseudo")) {
                             System.out.println("Erreur: " + reponse);
                             System.out.println("Veuillez choisir un autre pseudo.");
-                            // La boucle continue pour demander un nouveau pseudo
                         } else {
-                            // Connexion réussie
                             connexionReussie = true;
                             return true;
                         }
