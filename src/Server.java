@@ -2,21 +2,24 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.util.HashMap;
+import java.util.Map;
 
 public class Server {
 
     private DatagramSocket serverSocket;
-    private HashMap<Integer, String> joueurs;
-    private HashMap<Integer, String> spectateurs;
+    private HashMap<String, String> joueurs;
+    private String[] listeJoueurs;
+    private HashMap<String, String> spectateurs;
     private Grille grille;
     private int joueurActuel;
 
     public Server() throws Exception {
         this.serverSocket = new DatagramSocket(8080);
         this.joueurs = new HashMap<>();
+        this.listeJoueurs = new String[2];
         this.spectateurs = new HashMap<>();
         this.grille = new Grille();
-        this.joueurActuel = 1;
+        this.joueurActuel = 0;
         System.out.println("Serveur en attente...");
     }
 
@@ -34,8 +37,8 @@ public class Server {
 
             while (true) {
 
-                diffuserMessage("\nC'est au tour du joueur " + joueurActuel);
-                envoyerMessageAuClient(serverSocket, joueurs.get(joueurActuel), "C'est votre tour");
+                diffuserMessage("\nC'est au tour du joueur " + listeJoueurs[joueurActuel]);
+                envoyerMessageAuClient(serverSocket, joueurs.get(listeJoueurs[joueurActuel]), "C'est votre tour");
 
                 DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
                 serverSocket.receive(packet);
@@ -46,7 +49,7 @@ public class Server {
                 String message = new String(packet.getData(), 0, packet.getLength());
 
                 if (message.startsWith("COUP:")) {
-                    if (joueurs.get(joueurActuel).equals(infosEnvoyeur)) {
+                    if (joueurs.get(listeJoueurs[joueurActuel]).equals(infosEnvoyeur)) {
                         envoyerReponse("Serveur : Coup joué", packet);
                         System.out.println("Coup joué : " + message);
                         joueurActuel = (joueurActuel == 1) ? 2 : 1;
@@ -102,27 +105,41 @@ public class Server {
 
         String message = new String(packet.getData(), 0, packet.getLength());
 
-        if (message.equals("joueur")) {
-            int id = joueurs.size() + 1;
-            if (id <= 2) {
-                System.out.println("Joueur " + id + " connecté (IP : " + ipAddress + ", Port : " + packet.getPort());
-                String response = "\nVous êtes le joueur n°" + id + "/2\n";
+        String[] infosClient = message.split(" ");
+
+        if (verifierPseudo(infosClient[1])) {
+            if (infosClient[0].equals("joueur")) {
+                if (joueurs.size() < 2) {
+                    System.out.println(
+                            "Joueur " + infosClient[1] + " connecté (IP : " + ipAddress + ", Port : "
+                                    + packet.getPort());
+                    String response = "\nVous êtes le joueur " + infosClient[1] + "\n";
+                    envoyerReponse(response, packet);
+                    joueurs.put(infosClient[1], valuerIpPort);
+                    if (joueurs.size() == 1) {
+                        listeJoueurs[0] = infosClient[1];
+                    } else if (joueurs.size() == 2) {
+                        listeJoueurs[1] = infosClient[1];
+                    }
+                    System.out.println(joueurs.size() + " joueur(s) connecté(s)\n");
+                } else {
+                    System.out.println("Tentative de connxion en tant que Joueur refusée - maximun atteint");
+                    String response = "Nombre maximum de Joueurs atteint, connectez vous en tant que Spectateur";
+                    envoyerReponse(response, packet);
+                }
+            } else if (infosClient[0].equals("spectateur")) {
+                System.out.println(
+                        "Spectateur " + infosClient[1] + " connecté (IP : " + ipAddress + ", Port : "
+                                + packet.getPort());
+                String response = "Vous êtes le spectateur " + infosClient[1];
                 envoyerReponse(response, packet);
-                joueurs.put(id, valuerIpPort);
-                System.out.println(joueurs.size() + " joueur(s) connecté(s)\n");
-            } else {
-                System.out.println("Tentative de connxion en tant que Joueur refusée - maximun atteint");
-                String response = "Nombre maximum de Joueurs atteint, connectez vous en tant que Spectateur";
-                envoyerReponse(response, packet);
+                spectateurs.put(infosClient[1], valuerIpPort);
+                System.out.println(joueurs.size() + " spectateur(s) connecté(s)\n");
             }
-        } else if (message.equals("spectateur")) {
-            int id = spectateurs.size() + 1;
-            System.out.println("Spectateur " + id + " connecté (IP : " + ipAddress + ", Port : " + packet.getPort());
-            String response = "Vous êtes le spectateur n°" + id;
-            envoyerReponse(response, packet);
-            spectateurs.put(id, valuerIpPort);
-            System.out.println(joueurs.size() + " spectateur(s) connecté(s)\n");
+        } else {
+            envoyerReponse("Une personne existe déjà sous ce pseudo", packet);
         }
+
     }
 
     // Envoyer un message de réponse au client à partir d'un packet reçu
@@ -156,12 +173,12 @@ public class Server {
     }
 
     private void diffuserMessage(String message) throws Exception {
-        for (int i = 1; i <= joueurs.size(); i++) {
-            envoyerMessageAuClient(serverSocket, joueurs.get(i), message);
+        for (Map.Entry<String, String> entry : joueurs.entrySet()) {
+            envoyerMessageAuClient(serverSocket, entry.getValue(), message);
         }
 
-        for (int i = 1; i <= spectateurs.size(); i++) {
-            envoyerMessageAuClient(serverSocket, spectateurs.get(i), message);
+        for (Map.Entry<String, String> entry : spectateurs.entrySet()) {
+            envoyerMessageAuClient(serverSocket, entry.getValue(), message);
         }
     }
 
@@ -171,6 +188,21 @@ public class Server {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    private boolean verifierPseudo(String pseudo) {
+        for (Map.Entry<String, String> entry : joueurs.entrySet()) {
+            if (entry.getKey().toLowerCase().equals(pseudo.toLowerCase())) {
+                return false;
+            }
+        }
+
+        for (Map.Entry<String, String> entry : spectateurs.entrySet()) {
+            if (entry.getKey().toLowerCase().equals(pseudo.toLowerCase())) {
+                return false;
+            }
+        }
+        return true;
     }
 
     public static void main(String[] args) {

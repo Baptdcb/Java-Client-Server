@@ -14,9 +14,13 @@ public class Spectateur extends Client {
         Scanner scanner = new Scanner(System.in);
 
         try {
-            connexionServeur("spectateur", spectateurSocket);
-            String responseConnection = recevoirMessage(spectateurSocket);
-            System.out.println("Serveur : " + responseConnection);
+            boolean connexionReussie = connexionServeur("spectateur", spectateurSocket, scanner);
+            if (!connexionReussie) {
+                System.out.println("Impossible de se connecter au serveur");
+                return;
+            } else {
+                System.out.println("Vous êtes connecté en tant que spectateur");
+            }
 
             Thread receptionThread = new Thread(() -> {
                 while (true) {
