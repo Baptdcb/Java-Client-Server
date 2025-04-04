@@ -55,18 +55,50 @@ public class Server {
                 int portEnvoyeur = packet.getPort();
                 String infosEnvoyeur = adresseEnvoyeur + ":" + portEnvoyeur;
                 String message = new String(packet.getData(), 0, packet.getLength());
+                String expediteur = trouverExpediteur(infosEnvoyeur);
 
                 if (message.startsWith("COUP:")) {
                     if (joueurs.get(listeJoueurs[joueurActuel]).equals(infosEnvoyeur)) {
-                        envoyerReponse("Serveur : Coup joué", packet);
-                        System.out.println("Coup joué : " + message);
-                        joueurActuel = (joueurActuel == 0) ? 1 : 0;
-                        annoncerTour = true;
+                        String[] coup = message.substring(5).trim().split(",");
+                        if (coup.length != 2) {
+                            envoyerReponse("Veuillez utiliser le bon format", packet);
+                        } else {
+                            try {
+                                int ligne = Integer.parseInt(coup[0]) - 1;
+                                int colonne = Integer.parseInt(coup[1]) - 1;
+
+                                if (ligne >= 0 && ligne < 3 && colonne >= 0 && colonne < 3) {
+                                    boolean coupJoue = grille.jouer(joueurActuel, ligne, colonne);
+                                    if (coupJoue) {
+                                        diffuserMessage("\n" + expediteur + " a joué, voici la grille : ", expediteur);
+                                        diffuserGrille();
+
+                                        char symbole = joueurActuel == 0 ? 'X' : 'O';
+                                        if (grille.verifierGagnant(symbole)) {
+                                            diffuserMessage(expediteur + " a gagné la partie \nNouvelle partie : ");
+                                            grille.initialierGrille();
+                                            diffuserGrille();
+                                        } else {
+                                            System.out.println("Coup joué : " + message.substring(5));
+                                        }
+                                        joueurActuel = (joueurActuel == 0) ? 1 : 0;
+                                        annoncerTour = true;
+
+                                    } else {
+                                        envoyerReponse("La case est déjà prise, rejouez\n", packet);
+                                    }
+                                } else {
+                                    envoyerReponse("Veuillez entrer des valeurs comprises entre 1 et 3", packet);
+                                }
+                            } catch (Exception e) {
+                                envoyerReponse("Veuillez entrer le bon format", packet);
+                            }
+                        }
+
                     } else {
                         envoyerReponse("Serveur : Ce n'est pas ton tour", packet);
                     }
                 } else if (message.startsWith("CHAT:")) {
-                    String expediteur = trouverExpediteur(infosEnvoyeur);
                     diffuserMessage("Message de " + expediteur + " : " + message.substring(5), expediteur);
                 } else if (message.startsWith("MP:")) {
                     String contenu = message.substring(3).trim();
@@ -82,7 +114,6 @@ public class Server {
                         if (adresse.isEmpty()) {
                             envoyerReponse("Destinataire introuvable", packet);
                         } else {
-                            String expediteur = trouverExpediteur(infosEnvoyeur);
                             envoyerReponse("Serveur : Message envoyé", packet);
                             envoyerMessageAuClient(serverSocket, adresse,
                                     "Message de " + expediteur + " : " + contenuMessage);

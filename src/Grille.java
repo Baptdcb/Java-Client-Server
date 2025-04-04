@@ -1,11 +1,13 @@
 public class Grille {
 
     public char[][] grille;
-    public int tourJoueur = 1;
 
     public Grille() {
+        initialierGrille();
+    }
+
+    public void initialierGrille() {
         this.grille = new char[3][3];
-        // Initialisation avec des espaces vides
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++) {
                 this.grille[i][j] = ' ';
@@ -13,18 +15,16 @@ public class Grille {
         }
     }
 
-    public void jouer(int numJoueur, int ligne, int colonne) {
-        if (numJoueur != tourJoueur) {
-            System.out.println("Ce n'est pas le tour du joueur " + numJoueur);
-            return;
+    public boolean jouer(int numJoueur, int ligne, int colonne) {
+        if (grille[ligne][colonne] == ' ') {
+            if (numJoueur == 0) {
+                grille[ligne][colonne] = 'X';
+            } else {
+                grille[ligne][colonne] = 'O';
+            }
+            return true;
         }
-
-        if (numJoueur == 1) {
-            grille[ligne][colonne] = 'X';
-        } else {
-            grille[ligne][colonne] = 'O';
-        }
-        joueurSuivant();
+        return false;
     }
 
     public void afficherGrille() {
@@ -78,14 +78,6 @@ public class Grille {
         }
 
         return false;
-    }
-
-    public void joueurSuivant() {
-        if (tourJoueur == 1) {
-            tourJoueur = 2;
-        } else {
-            tourJoueur = 1;
-        }
     }
 
 }
