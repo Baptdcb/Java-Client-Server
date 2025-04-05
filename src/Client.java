@@ -143,7 +143,7 @@ public class Client {
      * Le message est préfixé par "MP:" pour indiquer son type
      * 
      * @param socket  Le socket UDP à utiliser pour l'envoi
-     * @param message Le message privé au format "/mp /destinataire contenu du
+     * @param message Le message privé au format "/destinataire contenu du
      *                message"
      */
     public void envoyerMessagePrive(DatagramSocket socket, String message) {
