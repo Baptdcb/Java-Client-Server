@@ -3,10 +3,10 @@ public class Grille {
     public char[][] grille;
 
     public Grille() {
-        initialierGrille();
+        initialiserGrille();
     }
 
-    public void initialierGrille() {
+    public void initialiserGrille() {
         this.grille = new char[3][3];
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++) {
@@ -78,6 +78,17 @@ public class Grille {
         }
 
         return false;
+    }
+
+    public boolean grilleRemplie() {
+        for (int ligne = 0; ligne < 3; ligne++) {
+            for (int colonne = 0; colonne < 3; colonne++) {
+                if (grille[ligne][colonne] == ' ') {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
 }

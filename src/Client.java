@@ -5,7 +5,7 @@ import java.util.Scanner;
 
 public class Client {
 
-    protected String SERVER_ADDRESS = "10.138.122.13";
+    protected String SERVER_ADDRESS = "192.168.0.15";
     protected int SERVER_PORT = 8080;
 
     public Client() {

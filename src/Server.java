@@ -12,6 +12,7 @@ public class Server {
     private HashMap<String, String> spectateurs;
     private Grille grille;
     private int joueurActuel;
+    private boolean annoncerTour;
 
     public Server() throws Exception {
         this.serverSocket = new DatagramSocket(8080);
@@ -20,6 +21,7 @@ public class Server {
         this.spectateurs = new HashMap<>();
         this.grille = new Grille();
         this.joueurActuel = 0;
+        this.annoncerTour = false;
         System.out.println("Serveur en attente...");
     }
 
@@ -37,8 +39,6 @@ public class Server {
 
             diffuserMessage("\nC'est au tour du joueur " + listeJoueurs[joueurActuel]);
             envoyerMessageAuClient(serverSocket, joueurs.get(listeJoueurs[joueurActuel]), "C'est votre tour");
-
-            boolean annoncerTour = false;
 
             while (true) {
 
@@ -58,68 +58,11 @@ public class Server {
                 String expediteur = trouverExpediteur(infosEnvoyeur);
 
                 if (message.startsWith("COUP:")) {
-                    if (joueurs.get(listeJoueurs[joueurActuel]).equals(infosEnvoyeur)) {
-                        String[] coup = message.substring(5).trim().split(",");
-                        if (coup.length != 2) {
-                            envoyerReponse("Veuillez utiliser le bon format", packet);
-                        } else {
-                            try {
-                                int ligne = Integer.parseInt(coup[0]) - 1;
-                                int colonne = Integer.parseInt(coup[1]) - 1;
-
-                                if (ligne >= 0 && ligne < 3 && colonne >= 0 && colonne < 3) {
-                                    boolean coupJoue = grille.jouer(joueurActuel, ligne, colonne);
-                                    if (coupJoue) {
-                                        diffuserMessage("\n" + expediteur + " a joué, voici la grille : ", expediteur);
-                                        diffuserGrille();
-
-                                        char symbole = joueurActuel == 0 ? 'X' : 'O';
-                                        if (grille.verifierGagnant(symbole)) {
-                                            diffuserMessage(expediteur + " a gagné la partie \nNouvelle partie : ");
-                                            grille.initialierGrille();
-                                            diffuserGrille();
-                                        } else {
-                                            System.out.println("Coup joué : " + message.substring(5));
-                                        }
-                                        joueurActuel = (joueurActuel == 0) ? 1 : 0;
-                                        annoncerTour = true;
-
-                                    } else {
-                                        envoyerReponse("La case est déjà prise, rejouez\n", packet);
-                                    }
-                                } else {
-                                    envoyerReponse("Veuillez entrer des valeurs comprises entre 1 et 3", packet);
-                                }
-                            } catch (Exception e) {
-                                envoyerReponse("Veuillez entrer le bon format", packet);
-                            }
-                        }
-
-                    } else {
-                        envoyerReponse("Serveur : Ce n'est pas ton tour", packet);
-                    }
+                    jouer(infosEnvoyeur, message, packet, expediteur);
                 } else if (message.startsWith("CHAT:")) {
                     diffuserMessage("Message de " + expediteur + " : " + message.substring(5), expediteur);
                 } else if (message.startsWith("MP:")) {
-                    String contenu = message.substring(3).trim();
-                    String[] parties = contenu.split(" ", 2);
-
-                    if (parties.length < 2) {
-                        envoyerReponse("Format invalide, utilisez la forme /destinataire message", packet);
-                    } else {
-                        String destinataire = parties[0].substring(1);
-                        String contenuMessage = parties[1];
-                        String adresse = trouverPersonne(destinataire);
-
-                        if (adresse.isEmpty()) {
-                            envoyerReponse("Destinataire introuvable", packet);
-                        } else {
-                            envoyerReponse("Serveur : Message envoyé", packet);
-                            envoyerMessageAuClient(serverSocket, adresse,
-                                    "Message de " + expediteur + " : " + contenuMessage);
-                        }
-                    }
-
+                    envoyerMessagePrive(message, expediteur, packet);
                 } else if (message.startsWith("PERSONNES")) {
                     envoyerReponse(listePersonnes(), packet);
                 }
@@ -179,6 +122,81 @@ public class Server {
             envoyerReponse("Veuillez attendre le début de la partie pour envoyer un message", packet);
         }
 
+    }
+
+    private void jouer(String infosEnvoyeur, String message, DatagramPacket packet, String expediteur) {
+        if (joueurs.get(listeJoueurs[joueurActuel]).equals(infosEnvoyeur)) {
+            String[] coup = message.substring(5).trim().split(",");
+            if (coup.length != 2) {
+                envoyerReponse("Veuillez utiliser le bon format", packet);
+            } else {
+                try {
+                    int ligne = Integer.parseInt(coup[0]) - 1;
+                    int colonne = Integer.parseInt(coup[1]) - 1;
+
+                    if (ligne >= 0 && ligne < 3 && colonne >= 0 && colonne < 3) {
+                        boolean coupJoue = grille.jouer(joueurActuel, ligne, colonne);
+                        if (coupJoue) {
+                            diffuserMessage("\n" + expediteur + " a joué, voici la grille : ", expediteur);
+                            diffuserGrille();
+
+                            char symbole = joueurActuel == 0 ? 'X' : 'O';
+                            if (grille.verifierGagnant(symbole)) {
+                                diffuserMessage(expediteur + " a gagné la partie \nNouvelle partie : ");
+                                grille.initialiserGrille();
+                                diffuserGrille();
+                            } else {
+                                if (grille.grilleRemplie()) {
+                                    diffuserMessage(
+                                            "La grille est remplie, aucun joueur n'a gagné.\nNouvelle partie : ");
+                                    grille.initialiserGrille();
+                                    diffuserGrille();
+                                } else {
+                                    System.out.println("Coup joué : " + message.substring(5));
+                                }
+                            }
+                            joueurActuel = (joueurActuel == 0) ? 1 : 0;
+                            annoncerTour = true;
+
+                        } else {
+                            envoyerReponse("La case est déjà prise, rejouez\n", packet);
+                        }
+                    } else {
+                        envoyerReponse("Veuillez entrer des valeurs comprises entre 1 et 3", packet);
+                    }
+                } catch (Exception e) {
+                    envoyerReponse("Veuillez entrer le bon format", packet);
+                }
+            }
+
+        } else {
+            envoyerReponse("Serveur : Ce n'est pas ton tour", packet);
+        }
+    }
+
+    private void envoyerMessagePrive(String message, String expediteur, DatagramPacket packet) {
+        String contenu = message.substring(3).trim();
+        String[] parties = contenu.split(" ", 2);
+
+        try {
+            if (parties.length < 2) {
+                envoyerReponse("Format invalide, utilisez la forme /destinataire message", packet);
+            } else {
+                String destinataire = parties[0].substring(1);
+                String contenuMessage = parties[1];
+                String adresse = trouverPersonne(destinataire);
+
+                if (adresse.isEmpty()) {
+                    envoyerReponse("Destinataire introuvable", packet);
+                } else {
+                    envoyerReponse("Serveur : Message envoyé", packet);
+                    envoyerMessageAuClient(serverSocket, adresse,
+                            "Message de " + expediteur + " : " + contenuMessage);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     // Envoyer un message de réponse au client à partir d'un packet reçu

@@ -34,14 +34,23 @@ public class Spectateur extends Client {
             });
             receptionThread.start();
 
-            System.out.println("Vous pouvez envoyer des messages de chat :");
+            System.out.println("Commandes disponibles :");
+            System.out.println("- Pour envoyer un message : tapez simplement votre message");
+            System.out.println("- Pour afficher la liste des personnes : /personnes");
+            System.out.println("- Pour envoyer un message privé : tapez votre message précédé de /mp /pseudoPersonne");
 
             while (true) {
                 String input = scanner.nextLine();
 
                 if (input.trim().equals("/personnes")) {
-
                     demanderPersonnes(spectateurSocket);
+                } else if (input.startsWith("/mp")) {
+                    if (input.length() >= 4) {
+                        String message = input.substring(4);
+                        envoyerMessagePrive(spectateurSocket, message);
+                    } else {
+                        System.out.println("Veuillez utiliser le bon format pour envoyer des messages");
+                    }
                 } else {
                     envoyerChat(spectateurSocket, input);
                 }

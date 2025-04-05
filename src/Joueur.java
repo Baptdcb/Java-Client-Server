@@ -34,8 +34,10 @@ public class Joueur extends Client {
             receptionThread.start();
 
             System.out.println("Commandes disponibles :");
-            System.out.println("- Pour jouer : /jouer ligne,colonne (ex: /jouer 0,1)");
+            System.out.println("- Pour jouer : /jouer ligne,colonne (ex: /jouer 1,1)");
             System.out.println("- Pour envoyer un message : tapez simplement votre message");
+            System.out.println("- Pour afficher la liste des personnes : /personnes");
+            System.out.println("- Pour envoyer un message privé : tapez votre message précédé de /mp /pseudoPersonne");
 
             while (true) {
 
