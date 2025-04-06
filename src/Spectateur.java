@@ -38,7 +38,6 @@ public class Spectateur extends Client {
             // Connexion au serveur
             boolean connexionReussie = connexionServeur("spectateur", spectateurSocket, scanner);
             if (!connexionReussie) {
-                System.out.println("Impossible de se connecter au serveur");
                 return;
             } else {
                 System.out.println("Vous êtes connecté en tant que spectateur");

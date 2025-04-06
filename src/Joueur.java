@@ -36,7 +36,6 @@ public class Joueur extends Client {
             // Connexion au serveur
             boolean connexionReussie = connexionServeur("joueur", clientSocket, scanner);
             if (!connexionReussie) {
-                System.out.println("Impossible de se connecter");
                 return;
             } else {
                 System.out.println("Vous êtes connecté en tant que joueur");

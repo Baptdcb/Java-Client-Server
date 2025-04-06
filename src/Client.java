@@ -89,7 +89,7 @@ public class Client {
                 }
 
                 String message = type + " " + username;
-                boolean messageEnvoye = envoyerMessage(socket, message);
+                boolean messageEnvoye = envoyerMessage(socket, "CONNEXION:" + message);
 
                 if (messageEnvoye) {
                     String reponse = recevoirMessage(socket);
@@ -98,6 +98,10 @@ public class Client {
                         if (reponse.contains("Une personne existe déjà sous ce pseudo")) {
                             System.out.println("Erreur: " + reponse);
                             System.out.println("Veuillez choisir un autre pseudo.");
+                        } else if (reponse.contains("connectez-vous en tant que spectateur")) {
+                            System.out.println("Erreur: " + reponse);
+                            return false;
+
                         } else {
                             connexionReussie = true;
                             return true;
@@ -115,6 +119,7 @@ public class Client {
         }
 
         return false;
+
     }
 
     /**

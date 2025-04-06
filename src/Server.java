@@ -35,6 +35,9 @@ public class Server {
     /** Indique si on doit annoncer le tour du joueur actuel */
     private boolean annoncerTour;
 
+    /** Indique si une partie est actuellement en cours */
+    private boolean partieEnCours;
+
     /**
      * Constructeur du serveur.
      * Initialise les structures de données et démarre le socket sur le port 8080.
@@ -49,6 +52,7 @@ public class Server {
         this.grille = new Grille();
         this.joueurActuel = 0;
         this.annoncerTour = false;
+        this.partieEnCours = false;
         System.out.println("Serveur en attente...");
     }
 
@@ -63,8 +67,14 @@ public class Server {
         try {
             // Attendre la connexion des deux joueurs
             while (joueurs.size() < 2) {
-                connexionClient(serverSocket, buffer);
+                DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
+                serverSocket.receive(packet);
+
+                String message = new String(packet.getData(), 0, packet.getLength());
+                connexionClient(message, packet);
             }
+
+            partieEnCours = true;
 
             // Initialisation du jeu et premier tour
             diffuserMessage("Debut du jeu, grille initiale :\n");
@@ -98,11 +108,14 @@ public class Server {
                 if (message.startsWith("COUP:")) {
                     jouer(infosEnvoyeur, message, packet, expediteur);
                 } else if (message.startsWith("CHAT:")) {
+                    envoyerReponse("Server : Message envoyé", packet);
                     diffuserMessage("Message de " + expediteur + " : " + message.substring(5), expediteur);
                 } else if (message.startsWith("MP:")) {
                     envoyerMessagePrive(message, expediteur, packet);
                 } else if (message.startsWith("PERSONNES")) {
                     envoyerReponse(listePersonnes(), packet);
+                } else if (message.startsWith("CONNEXION:")) {
+                    connexionClient(message, packet);
                 }
             }
         } catch (
@@ -114,35 +127,46 @@ public class Server {
 
     /**
      * Gère la connexion d'un nouveau client (joueur ou spectateur).
-     * Vérifie la disponibilité du pseudo et ajoute le client à la structure
-     * appropriée.
+     * Vérifie si le client peut se connecter en fonction de l'état de la partie, du
+     * nombre
+     * de joueurs déjà connectés et de la disponibilité du pseudo.
      * 
-     * @param serverSocket Le socket du serveur
-     * @param buffer       Le buffer pour recevoir les données
-     * @throws Exception Si une erreur de communication se produit
+     * @param message Le message contenant les informations de connexion
+     * @param packet  Le paquet UDP reçu contenant les informations réseau du client
      */
-    private void connexionClient(DatagramSocket serverSocket, byte[] buffer) throws Exception {
-        DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
-        serverSocket.receive(packet);
+    private void connexionClient(String message, DatagramPacket packet) {
+        String connexionString;
 
-        String valuerIpPort = packet.getAddress().toString().replace("/", "") + ":" + packet.getPort();
+        if (message.startsWith("CONNEXION:")) {
+            connexionString = message.substring(10);
+        } else {
+            connexionString = message;
+        }
+
+        String ipPort = packet.getAddress().toString().replace("/", "") + ":" + packet.getPort();
         String ipAddress = packet.getAddress().toString();
 
-        String message = new String(packet.getData(), 0, packet.getLength());
-
-        if (message.startsWith("joueur") || message.startsWith("spectateur")) {
-            String[] infosClient = message.split(" ");
+        if (connexionString.startsWith("joueur") || connexionString.startsWith("spectateur")) {
+            String[] infosClient = connexionString.split(" ");
 
             if (verifierPseudo(infosClient[1])) {
                 // Connexion d'un joueur
                 if (infosClient[0].equals("joueur")) {
+
+                    if (partieEnCours) {
+                        System.out.println("Tentative de connexion en tant que joueur refusée - partie déjà commencée");
+                        String response = "La partie a déjà commencé, connectez-vous en tant que spectateur";
+                        envoyerReponse(response, packet);
+                        return;
+                    }
+
                     if (joueurs.size() < 2) {
                         System.out.println(
                                 "Joueur " + infosClient[1] + " connecté (IP : " + ipAddress + ", Port : "
                                         + packet.getPort());
                         String response = "\nVous êtes le joueur " + infosClient[1] + "\n";
                         envoyerReponse(response, packet);
-                        joueurs.put(infosClient[1], valuerIpPort);
+                        joueurs.put(infosClient[1], ipPort);
                         if (joueurs.size() == 1) {
                             listeJoueurs[0] = infosClient[1];
                         } else if (joueurs.size() == 2) {
@@ -161,7 +185,7 @@ public class Server {
                                     + packet.getPort());
                     String response = "Vous êtes le spectateur " + infosClient[1];
                     envoyerReponse(response, packet);
-                    spectateurs.put(infosClient[1], valuerIpPort);
+                    spectateurs.put(infosClient[1], ipPort);
                     System.out.println(spectateurs.size() + " spectateur(s) connecté(s)\n");
                 }
             } else {
@@ -170,7 +194,6 @@ public class Server {
         } else {
             envoyerReponse("Veuillez attendre le début de la partie pour envoyer un message", packet);
         }
-
     }
 
     /**
@@ -280,6 +303,8 @@ public class Server {
 
     /**
      * Envoie une réponse à un client spécifique.
+     * Crée et envoie un paquet UDP contenant le message de réponse
+     * directement au client ayant fait la demande.
      * 
      * @param responseMessage Le message à envoyer
      * @param packet          Le paquet contenant les informations du destinataire
@@ -323,6 +348,8 @@ public class Server {
 
     /**
      * Diffuse un message à tous les clients connectés (joueurs et spectateurs).
+     * Envoie le message spécifié à tous les joueurs et spectateurs enregistrés
+     * sans distinction.
      * 
      * @param message Le message à diffuser
      * @throws Exception Si l'envoi échoue
@@ -349,14 +376,14 @@ public class Server {
     private void diffuserMessage(String message, String expediteur) throws Exception {
         // Envoie aux joueurs (sauf expediteur)
         for (Map.Entry<String, String> entry : joueurs.entrySet()) {
-            if (entry.getKey() != expediteur) {
+            if (!entry.getKey().equals(expediteur)) {
                 envoyerMessageAuClient(serverSocket, entry.getValue(), message);
             }
         }
 
         // Envoie aux spectateurs (sauf expediteur)
         for (Map.Entry<String, String> entry : spectateurs.entrySet()) {
-            if (entry.getKey() != expediteur) {
+            if (!entry.getKey().equals(expediteur)) {
                 envoyerMessageAuClient(serverSocket, entry.getValue(), message);
             }
         }
@@ -364,6 +391,8 @@ public class Server {
 
     /**
      * Diffuse l'état actuel de la grille à tous les clients.
+     * Récupère la représentation textuelle de la grille et l'envoie
+     * à tous les clients connectés.
      */
     private void diffuserGrille() {
         try {
@@ -396,6 +425,8 @@ public class Server {
 
     /**
      * Génère une liste des personnes connectées.
+     * Formate la liste des joueurs et spectateurs actuellement connectés.
+     * Gère les cas où aucun joueur ou spectateur n'est connecté.
      * 
      * @return Une chaîne contenant la liste formatée des joueurs et spectateurs
      */
@@ -431,6 +462,7 @@ public class Server {
 
     /**
      * Trouve le pseudo d'un client à partir de son adresse réseau.
+     * Recherche l'adresse dans les maps des joueurs et spectateurs.
      * 
      * @param infosEnvoyeur L'adresse au format "adresse:port"
      * @return Le pseudo du client ou "Inconnu" si non trouvé
